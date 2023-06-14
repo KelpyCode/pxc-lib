@@ -10,7 +10,8 @@ export interface IProjectProxy {
   nodes: Map<number, Node>;
   nodeProxies: Map<number, INodeProxy>;
   getNode: (node: NodeSelector) => INodeProxy;
-  registerNode: (node: NodeSelector) => void;
+  getNodeAt: (x: number, y: number, threshold: number) => Node | undefined;
+  registerNode: (node: Node, proxy: INodeProxy) => void;
   unregisterNode: (node: NodeSelector) => void;
 }
 
@@ -30,13 +31,38 @@ export const ProjectProxy: ProjectProxyFn = (
     const nodes = new Map<number, Node>()
     const nodeProxies = new Map<number, INodeProxy>()
 
+    const proxy = {
+        addNode,
+        removeNode,
+        project: $project,
+        nodes,
+        nodeProxies,
+        getNode,
+        getNodeAt,
+        registerNode,
+        unregisterNode,
+    } as IProjectProxy
+
     function registerAllNodes() {
         $project.nodes.forEach((node) => {
-            registerNode(node)
+            NodeProxy(proxy, node)
         })
     }
 
     registerAllNodes()
+
+    function getNodeAt(x: number, y: number, threshold: number) {
+        const node = $project.nodes.find((node) => {
+            return (
+                node.x - threshold <= x &&
+                node.x + threshold >= x &&
+                node.y - threshold <= y &&
+                node.y + threshold >= y
+            )
+        })
+
+        return node
+    }
 
     function getNode(node: NodeSelector): INodeProxy {
         if (typeof node === 'number') {
@@ -48,10 +74,10 @@ export const ProjectProxy: ProjectProxyFn = (
         }
     }
 
-    function registerNode(node: NodeSelector) {
-        const $node = getNode(node)
-        nodes.set($node.id, $node.node)
-        nodeProxies.set($node.id, $node)
+    function registerNode(node: Node, proxy: INodeProxy) {
+        // const $node = getNode(node)
+        nodes.set(node.id, node)
+        nodeProxies.set(node.id, proxy)
     }
 
     function unregisterNode(node: NodeSelector) {
@@ -78,16 +104,7 @@ export const ProjectProxy: ProjectProxyFn = (
         fs.writeFileSync(file, data)
     }
 
-    const proxy = {
-        addNode,
-        removeNode,
-        project: $project,
-        nodes,
-        nodeProxies,
-        getNode,
-        registerNode,
-        unregisterNode,
-    }
+
 
     return proxy
 }

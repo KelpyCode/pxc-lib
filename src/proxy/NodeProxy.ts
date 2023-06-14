@@ -1,5 +1,5 @@
 import { Node } from '../types/Project'
-import { IProjectProxy } from './ProjectProxy'
+import { IProjectProxy, NodeSelector } from './ProjectProxy'
 
 const INPUT_VAR_INDEX = 1
 
@@ -8,25 +8,34 @@ export interface INodeProxy {
   id: number;
   node: Node;
   setInputValue: (inputIndex: number, value: any) => void;
-  setFromNode: (inputIndex: number, from?: number) => void;
+  connectFrom: (inputIndex: number, from: NodeSelector) => void;
+  connectTo: (inputIndex: number, from: NodeSelector) => void;
   setName: (name: string) => void;
-  getDependencyNodes: () => INodeProxy[];
-  getAllDependencyNodes: () => INodeProxy[];
-  move: (x: number, y: number) => void
-  remove: () => void
+  getInConnections: () => INodeProxy[];
+  getAllInConnections: () => INodeProxy[];
+  getOutConnections: () => INodeProxy[];
+  getAllOutConnections: () => INodeProxy[];
+  move: (x: number, y: number) => void;
+  moveAbsolute: (x: number, y: number) => void;
+  remove: () => void;
+  removeConnection(inputIndex: number): void;
 }
 
-
-
 export function NodeProxy(project: IProjectProxy, node: Node | number): INodeProxy {
+    
     if (typeof node === 'number') {
-        const nodeProxy = project.nodeProxies.get(node)
+        const id = node
+        const nodeProxy = project.nodeProxies.get(id)
 
         if(nodeProxy) return nodeProxy
 
-        node = project.nodes.get(node) as Node
-        if(node === undefined) {
-            throw new Error(`Node ${node} not found`)
+        node = project.nodes.get(id) as Node
+
+
+        if (node === undefined) {
+            node = project.project.nodes.find((x) => x.id === id)!
+            if (node === undefined)
+                throw new Error(`Node ${node} not found`)
         }
     }
     const $node = node as Node
@@ -36,23 +45,25 @@ export function NodeProxy(project: IProjectProxy, node: Node | number): INodePro
         $node.inputs[inputIndex]['raw value'][0][INPUT_VAR_INDEX] = value
     }
 
-    function setFromNode(inputIndex: number, from?: number) {
-        $node.inputs[inputIndex]['from node'] = from ?? -1
-        $node.inputs[inputIndex]['from index'] = (from ?? -1) >= 0 ? 0 : -1
-        console.log(inputIndex)
+    function removeConnection(inputIndex: number) {
+        $node.inputs[inputIndex]['from node'] = -1
+        $node.inputs[inputIndex]['from index'] = -1
+    }
 
-        if(from ?? -1 >= 0) {
-            const fromProxy = NodeProxy(project, from ?? -1)
-            fromProxy.move(-200, inputIndex * 75)
-        }
-        // if ((from ?? -1) >= 0) {
-        //     const dep = NodeProxy(from ?? -1)
-        //     console.log('dep', dep.getDependencyNodes())
-        //     dep.getDependencyNodes().forEach(x => {
-        //         console.log('dependency', x)
-        //         x.move(-100, inputIndex * 100)
-        //     })
-        // }
+    /**
+     * Connect to input of another node
+     */
+    function connectTo(inputIndex: number, to: NodeSelector) {
+        const $to = project.getNode(to)
+
+        $to.connectFrom(inputIndex, $node.id)
+    }
+
+    function connectFrom(inputIndex: number, from: NodeSelector) {
+        const $from = project.getNode(from ?? -1)
+        const id = $from.id
+        $node.inputs[inputIndex]['from node'] = id ?? -1
+        $node.inputs[inputIndex]['from index'] = (id ?? -1) >= 0 ? 0 : -1
     }
 
     function setName(name: string) {
@@ -64,18 +75,38 @@ export function NodeProxy(project: IProjectProxy, node: Node | number): INodePro
         $node.y += y
     }
 
-    function getDependencyNodes(): INodeProxy[] {
+    function moveAbsolute(x: number, y: number) {
+        $node.x = x
+        $node.y = y
+    }
+
+    function getOutConnections(): INodeProxy[] {
+        return project.project.nodes.filter(x => x.inputs.some(y => y['from node'] === $node.id)).map(x => NodeProxy(project, x.id))
+    }
+
+    function getAllOutConnections(): INodeProxy[] {
+        const nodes: INodeProxy[] = []
+
+        getOutConnections().forEach(x => {
+            nodes.push(x)
+            nodes.push(...x.getAllOutConnections())
+        })
+
+        return nodes
+    }
+
+    function getInConnections(): INodeProxy[] {
         return $node.inputs
             .filter(x => x['from node'] >= 0)
             .map(x => NodeProxy(project, x['from node']))
     }
 
-    function getAllDependencyNodes(): INodeProxy[] {
+    function getAllInConnections(): INodeProxy[] {
         const nodes: INodeProxy[] = []
 
-        getDependencyNodes().forEach(x => {
+        getInConnections().forEach(x => {
             nodes.push(x)
-            nodes.push(...x.getAllDependencyNodes())
+            nodes.push(...x.getAllInConnections())
         })
 
         return nodes
@@ -90,16 +121,21 @@ export function NodeProxy(project: IProjectProxy, node: Node | number): INodePro
         id: $node.id,
         node,
         setInputValue,
-        setFromNode,
+        connectFrom,
+        connectTo,
         setName,
-        getDependencyNodes,
-        getAllDependencyNodes,
+        getInConnections,
+        getAllInConnections,
+        getOutConnections,
+        getAllOutConnections,
         move,
+        moveAbsolute,
         remove,
-        proxy: true
+        removeConnection,
+        proxy: true,
     }
 
-    project.registerNode($node)
+    project.registerNode($node, proxy)
 
     return proxy
 }

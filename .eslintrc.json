@@ -23,23 +23,12 @@
         "@typescript-eslint"
     ],
     "rules": {
-        "@typescript-eslint/no-empty-interface": "off",
-        "@typescript-eslint/no-explicit-any": "off",
-        "indent": [
-            "error",
-            4
-        ],
-        "linebreak-style": [
-            "error",
-            "unix"
-        ],
-        "quotes": [
-            "error",
-            "single"
-        ],
-        "semi": [
-            "error",
-            "never"
-        ]
+        "@typescript-eslint/no-non-null-assertion": "off",
+      "@typescript-eslint/no-empty-interface": "off",
+      "@typescript-eslint/no-explicit-any": "off",
+      "linebreak-style": 0,
+      "indent": ["error", 4],
+      "quotes": ["error", "single"],
+      "semi": ["error", "never"]
     }
 }

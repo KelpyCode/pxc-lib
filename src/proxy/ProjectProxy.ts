@@ -10,7 +10,7 @@ export interface IProjectProxy {
   nodes: Map<number, Node>;
   nodeProxies: Map<number, INodeProxy>;
   getNode: (node: NodeSelector) => INodeProxy;
-  getNodeAt: (x: number, y: number, threshold: number) => Node | undefined;
+  getNodesAt: (x: number, y: number, threshold: number) => Node[];
   registerNode: (node: Node, proxy: INodeProxy) => void;
   unregisterNode: (node: NodeSelector) => void;
 }
@@ -26,33 +26,32 @@ type ProjectProxyFn = {
 export const ProjectProxy: ProjectProxyFn = (
     project: Project
 ): IProjectProxy => {
-    const $project = project as Project
 
     const nodes = new Map<number, Node>()
     const nodeProxies = new Map<number, INodeProxy>()
 
-    const proxy = {
+    const $project = {
         addNode,
         removeNode,
-        project: $project,
+        project,
         nodes,
         nodeProxies,
         getNode,
-        getNodeAt,
+        getNodesAt,
         registerNode,
         unregisterNode,
     } as IProjectProxy
 
     function registerAllNodes() {
-        $project.nodes.forEach((node) => {
-            NodeProxy(proxy, node)
+        project.nodes.forEach((node) => {
+            NodeProxy($project, node)
         })
     }
 
     registerAllNodes()
 
-    function getNodeAt(x: number, y: number, threshold: number) {
-        const node = $project.nodes.find((node) => {
+    function getNodesAt(x: number, y: number, threshold: number, ignoreNode?: number) {
+        let nodes = project.nodes.filter((node) => {
             return (
                 node.x - threshold <= x &&
                 node.x + threshold >= x &&
@@ -61,16 +60,20 @@ export const ProjectProxy: ProjectProxyFn = (
             )
         })
 
-        return node
+        if (ignoreNode) {
+            nodes = nodes.filter((node) => node.id !== ignoreNode)
+        }
+
+        return nodes
     }
 
     function getNode(node: NodeSelector): INodeProxy {
         if (typeof node === 'number') {
-            return NodeProxy(proxy, node)
+            return NodeProxy($project, node)
         } else if ((node as INodeProxy).proxy) {
             return node as INodeProxy
         } else {
-            return NodeProxy(proxy, (node as Node).id)
+            return NodeProxy($project, (node as Node).id)
         }
     }
 
@@ -88,25 +91,25 @@ export const ProjectProxy: ProjectProxyFn = (
 
     function addNode(node: NodeSelector) {
         const $node = getNode(node)
-        $project.nodes.push($node.node)
+        project.nodes.push($node.node)
     }
 
     function removeNode(node: NodeSelector) {
         const $node = getNode(node)
-        const index = $project.nodes.indexOf($node.node)
+        const index = project.nodes.indexOf($node.node)
         if (index >= 0) {
-            $project.nodes.splice(index, 1)
+            project.nodes.splice(index, 1)
         }
     }
 
     function save(file: string, format = false) {
-        const data = JSON.stringify($project, null, 2)
+        const data = JSON.stringify(project, null, 2)
         fs.writeFileSync(file, data)
     }
 
 
 
-    return proxy
+    return $project
 }
 
 ProjectProxy.makeProject = () => {

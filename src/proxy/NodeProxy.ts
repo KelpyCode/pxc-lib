@@ -82,8 +82,7 @@ export function NodeProxy(project: IProjectProxy, node: Node | number): INodePro
     }
 
     function remove() {
-        project.nodes.delete($node.id)
-        project.nodeProxies.delete($node.id)
+        project.unregisterNode($node)
         project.removeNode($node)
     }
 
@@ -100,8 +99,7 @@ export function NodeProxy(project: IProjectProxy, node: Node | number): INodePro
         proxy: true
     }
 
-    project.nodes.set($node.id, $node)
-    project.nodeProxies.set($node.id, proxy)
+    project.registerNode($node)
 
     return proxy
 }

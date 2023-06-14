@@ -1,5 +1,5 @@
-import { nodesMap } from '../factory/NodeFactory'
 import { Node } from '../types/Project'
+import { IProjectProxy } from './ProjectProxy'
 
 const INPUT_VAR_INDEX = 1
 
@@ -13,11 +13,18 @@ export interface INodeProxy {
   getDependencyNodes: () => INodeProxy[];
   getAllDependencyNodes: () => INodeProxy[];
   move: (x: number, y: number) => void
+  remove: () => void
 }
 
-export function NodeProxy(node: Node | number): INodeProxy {
+
+
+export function NodeProxy(project: IProjectProxy, node: Node | number): INodeProxy {
     if (typeof node === 'number') {
-        node = nodesMap.get(node) as Node
+        const nodeProxy = project.nodeProxies.get(node)
+
+        if(nodeProxy) return nodeProxy
+
+        node = project.nodes.get(node) as Node
         if(node === undefined) {
             throw new Error(`Node ${node} not found`)
         }
@@ -35,7 +42,7 @@ export function NodeProxy(node: Node | number): INodeProxy {
         console.log(inputIndex)
 
         if(from ?? -1 >= 0) {
-            const fromProxy = NodeProxy(from ?? -1)
+            const fromProxy = NodeProxy(project, from ?? -1)
             fromProxy.move(-200, inputIndex * 75)
         }
         // if ((from ?? -1) >= 0) {
@@ -60,7 +67,7 @@ export function NodeProxy(node: Node | number): INodeProxy {
     function getDependencyNodes(): INodeProxy[] {
         return $node.inputs
             .filter(x => x['from node'] >= 0)
-            .map(x => NodeProxy(x['from node']))
+            .map(x => NodeProxy(project, x['from node']))
     }
 
     function getAllDependencyNodes(): INodeProxy[] {
@@ -74,6 +81,12 @@ export function NodeProxy(node: Node | number): INodeProxy {
         return nodes
     }
 
+    function remove() {
+        project.nodes.delete($node.id)
+        project.nodeProxies.delete($node.id)
+        project.removeNode($node)
+    }
+
     const proxy = {
         id: $node.id,
         node,
@@ -83,8 +96,12 @@ export function NodeProxy(node: Node | number): INodeProxy {
         getDependencyNodes,
         getAllDependencyNodes,
         move,
+        remove,
         proxy: true
     }
+
+    project.nodes.set($node.id, $node)
+    project.nodeProxies.set($node.id, proxy)
 
     return proxy
 }

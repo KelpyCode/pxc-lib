@@ -1,27 +1,54 @@
 import { Node, Project } from '../types/Project'
-import { INodeProxy } from './NodeProxy'
+import { INodeProxy, NodeProxy } from './NodeProxy'
 
-interface ProjectProxy {
-    addNode: (node: INodeProxy | Node) => void;
-    project: Project
+export interface IProjectProxy {
+  addNode: (node: NodeSelector) => void;
+  removeNode: (node: NodeSelector) => void;
+  project: Project;
+  nodes: Map<number, Node>;
+  nodeProxies: Map<number, INodeProxy>;
+  getNode: (node: NodeSelector) => INodeProxy;
 }
 
+export type NodeSelector = number | INodeProxy | Node
 
-export function ProjectProxy(project: Project): ProjectProxy {
+export function ProjectProxy(project: Project): IProjectProxy {
     const $project = project as Project
 
+    const nodes = new Map<number, Node>()
+    const nodeProxies = new Map<number, INodeProxy>()
 
-    function addNode(node: INodeProxy | Node) {
-        let $node = node as Node
-        if ((node as INodeProxy).proxy) {
-            $node = (node as INodeProxy).node
+    function getNode(node: NodeSelector): INodeProxy {
+        if (typeof node === 'number') {
+            return NodeProxy(proxy, node)
+        } else if ((node as INodeProxy).proxy) {
+            return node as INodeProxy
+        } else {
+            return NodeProxy(proxy, (node as Node).id)
         }
-        $project.nodes.push($node)
+    }
+
+
+    function addNode(node: NodeSelector) {
+        const $node = getNode(node)
+        $project.nodes.push($node.node)
+    }
+
+    function removeNode(node: NodeSelector) {
+        const $node = getNode(node)
+        const index = $project.nodes.indexOf($node.node)
+        if (index >= 0) {
+            $project.nodes.splice(index, 1)
+        }
     }
 
     const proxy = {
         addNode,
-        project: $project
+        removeNode,
+        project: $project,
+        nodes,
+        nodeProxies,
+        getNode
     }
 
     return proxy

@@ -16,21 +16,22 @@ const project = ProjectProxy(ProjectFactory())
 const inputs: INodeProxy[] = []
 
 for (let i = 0; i < 2; i++) {
-    inputs.push(BooleanNode({ value: i % 2 == 1 }))
+  
+
+    inputs.push(BooleanNode(project, { value: i % 2 == 1 }))
 
     project.addNode(inputs[i])
 }
 
-
 // for (let i = 0; i < 2; i += 2) {
-const add = GateNode({ gate: LogicGate.AND, value1: false, value2: false })
+const add = GateNode(project, { gate: LogicGate.AND, value1: false, value2: false })
 add.setFromNode(1, inputs[0].id)
 add.setFromNode(2, inputs[0 + 1].id)
 
 project.addNode(add)
 // }
 
-const or = GateNode({ gate: LogicGate.OR, value1: false, value2: false })
+const or = GateNode(project, { gate: LogicGate.OR, value1: false, value2: false })
 
 or.setFromNode(1, add.id)
 or.setFromNode(2, inputs[1].id)

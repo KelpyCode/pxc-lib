@@ -2,7 +2,7 @@ import { INodeProxy, NodeProxy } from '../proxy/NodeProxy'
 import { IProjectProxy } from '../proxy/ProjectProxy'
 import { Input, Node } from '../types/Project'
 
-let id = 1
+let id = 1000
 
 
 export function NodeFactory(project: IProjectProxy, options: {

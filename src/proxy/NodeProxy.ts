@@ -8,15 +8,15 @@ export interface INodeProxy {
   id: number;
   node: Node;
   setInputValue: (inputIndex: number, value: any) => void;
-  connectFrom: (inputIndex: number, from: NodeSelector) => void;
-  connectTo: (inputIndex: number, from: NodeSelector) => void;
+  connectFrom: (inputIndex: number, from: NodeSelector, fromIndex?: number) => void;
+  connectTo: (inputIndex: number, to: NodeSelector, fromIndex?: number) => void;
   setName: (name: string) => void;
   getInConnections: () => INodeProxy[];
   getAllInConnections: () => INodeProxy[];
   getOutConnections: () => INodeProxy[];
   getAllOutConnections: () => INodeProxy[];
-  move: (x: number, y: number) => void;
-  moveAbsolute: (x: number, y: number) => void;
+  move: (x: number, y: number, connectionIns?: boolean) => void;
+  moveAbsolute: (x: number, y: number, connectionIns?: boolean) => void;
   remove: () => void;
   removeConnection(inputIndex: number): void;
 }
@@ -53,31 +53,51 @@ export function NodeProxy(project: IProjectProxy, node: Node | number): INodePro
     /**
      * Connect to input of another node
      */
-    function connectTo(inputIndex: number, to: NodeSelector) {
+    function connectTo(
+        inputIndex: number,
+        to: NodeSelector,
+        fromIndex?: number
+    ) {
         const $to = project.getNode(to)
 
-        $to.connectFrom(inputIndex, $node.id)
+        $to.connectFrom(inputIndex, $node.id, fromIndex)
     }
 
-    function connectFrom(inputIndex: number, from: NodeSelector) {
+    function connectFrom(inputIndex: number, from: NodeSelector, fromIndex = 0) {
         const $from = project.getNode(from ?? -1)
         const id = $from.id
+        console.log($node.inputs)
         $node.inputs[inputIndex]['from node'] = id ?? -1
-        $node.inputs[inputIndex]['from index'] = (id ?? -1) >= 0 ? 0 : -1
+        $node.inputs[inputIndex]['from index'] = (id ?? -1) >= 0 ? fromIndex : -1
     }
 
     function setName(name: string) {
         $node.name = name
     }
 
-    function move(x: number, y: number) {
+    function move(x: number, y: number, connectionIns = false) {
         $node.x += x
         $node.y += y
+        
+        if (connectionIns) {
+            getAllInConnections().forEach(node => {
+                node.move(x, y)
+            })
+        }
     }
 
-    function moveAbsolute(x: number, y: number) {
+    function moveAbsolute(x: number, y: number, connectionIns = false) {
+        const previous = [$node.x, $node.y]
         $node.x = x
         $node.y = y
+
+        const diff = [x - previous[0], y - previous[1]]
+        
+        if (connectionIns) {
+            getAllInConnections().forEach((node) => {
+                node.move(diff[0], diff[1])
+            })
+        }
     }
 
     function getOutConnections(): INodeProxy[] {

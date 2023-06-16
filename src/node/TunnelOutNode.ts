@@ -3,10 +3,10 @@ import { NodeFactory } from '../factory/NodeFactory'
 import { NodeGeneratorArgs } from '../types/NodeGenerator'
 import { IProjectProxy } from './../proxy/ProjectProxy'
 
-export function BooleanNode(project: IProjectProxy, options: NodeGeneratorArgs<{value: boolean}>) {
+export function TunnelOutNode(project: IProjectProxy, options: NodeGeneratorArgs<{value: string}>) {
     return NodeFactory(project, {
-        group: -4,
-        inputs: [InputFactory({ value: options.value, from: options.from })],
-        type: 'Node_Boolean',
+        group: options.group ?? -4,
+        inputs: [InputFactory({ value: options.value })],
+        type: 'Node_Tunnel_Out',
     })
 }

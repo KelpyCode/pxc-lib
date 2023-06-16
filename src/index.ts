@@ -13,7 +13,7 @@ import { Nodes } from './node/Nodes'
 import { Node } from './types/Project'
 
 
-const $project = ProjectProxy.loadProject('./example/texto.pxc')
+const $project = ProjectProxy.loadProject('./example/digatizewriting.pxc')
 
 const $ = Nodes($project)
 
@@ -27,10 +27,25 @@ $project.project.nodes.forEach(node => {
 
 const START_X = 800
 const GRID_SIZE_Y = 150
-const GRID_SIZE_X = 250;
+const GRID_SIZE_X = 250
+
+
+function generateRandomString(): string {
+    return Math.random().toString(36).substring(7)
+}
+
+$project.project.nodes.forEach(node => {
+    const $node = NodeProxy($project, node)
+
+    $node.getInConnections().forEach((connection) => {
+        $project.tunnelifyConnection(connection.node.id, node.id, generateRandomString())
+    })
+});
 
 [...groups].forEach(group => {
-    $project.project.nodes.filter(x => x.group === group).forEach((node) => {
+    const nodes = $project.project.nodes.filter((x) => x.group === group)
+
+    nodes.forEach((node) => {
         const $node = NodeProxy($project, node)
 
         function putNode(node: Node, x: number, y: number) {
@@ -46,15 +61,19 @@ const GRID_SIZE_X = 250;
             node.y = y
             node.x = x
 
-            const heights: number[] = []
+            const ys: number[] = []
+            const xs: number[] = []
             connections.forEach((connection) => {
                 console.log('conn', connection)
-                heights.push(putNode(connection.node, x - GRID_SIZE_X, node.y))                
+                ys.push(putNode(connection.node, x - GRID_SIZE_X, node.y))
+                xs.push(connection.node.x - GRID_SIZE_X)
             })
 
-            // Get highest node
-            if(heights.length > 0)
-                node.y = Math.min(...heights)
+            // Get highest child node
+            if(ys.length > 0)
+                node.y = Math.min(...ys)
+            
+            // if (xs.length > 0) node.x = Math.max(...xs)
 
             return node.y // Highest node
         }
@@ -68,6 +87,17 @@ const GRID_SIZE_X = 250;
 
     })
 
+
+    nodes.forEach(node => {
+        const $node = NodeProxy($project, node)
+
+        $node.getInConnections().forEach(connection => {
+            if(connection.node.x > node.x) {
+                // node.x = connection.node.x + GRID_SIZE_X
+                connection.move(node.x - connection.node.x - GRID_SIZE_X, 0, true)
+            }
+        })
+    })
 })
 
 // [...groups].forEach(group => {

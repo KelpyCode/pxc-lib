@@ -2,6 +2,7 @@ import { Node, Project } from '../types/Project'
 import { INodeProxy, NodeProxy } from './NodeProxy'
 import { loadProject } from './../util'
 import fs from 'fs'
+import path from 'path'
 import { ProjectFactory } from '../factory/ProjectFactory'
 import { TunnelInNode } from '../node/TunnelInNode'
 import { TunnelOutNode } from '../node/TunnelOutNode'
@@ -15,7 +16,12 @@ export interface IProjectProxy {
   getNodesAt: (x: number, y: number, threshold: number) => Node[];
   registerNode: (node: Node, proxy: INodeProxy) => void;
   unregisterNode: (node: NodeSelector) => void;
-  tunnelifyConnection: (from: number, to: number, name: string) => void
+  tunnelifyConnection: (from: number, to: number, name: string) => void;
+  format: () => void;
+  getGroups: () => number[];
+  save: (file: string, format?: boolean) => void;
+  GRID_SIZE_Y: number;
+  GRID_SIZE_X: number;
 }
 
 export type NodeSelector = number | INodeProxy | Node;
@@ -29,9 +35,13 @@ type ProjectProxyFn = {
 export const ProjectProxy: ProjectProxyFn = (
     project: Project
 ): IProjectProxy => {
-
     const nodes = new Map<number, Node>()
     const nodeProxies = new Map<number, INodeProxy>()
+
+    const FORMAT_INIT_POSITION = [-10000, -10000]
+    const START_X = 800
+    const GRID_SIZE_Y = 150
+    const GRID_SIZE_X = 250
 
     const $project = {
         addNode,
@@ -43,7 +53,12 @@ export const ProjectProxy: ProjectProxyFn = (
         getNodesAt,
         registerNode,
         unregisterNode,
-        tunnelifyConnection
+        tunnelifyConnection,
+        getGroups,
+        format,
+        save,
+        GRID_SIZE_Y,
+        GRID_SIZE_X,
     } as IProjectProxy
 
     function registerAllNodes() {
@@ -54,13 +69,18 @@ export const ProjectProxy: ProjectProxyFn = (
 
     registerAllNodes()
 
-    function getNodesAt(x: number, y: number, threshold: number, ignoreNode?: number) {
+    function getNodesAt(
+        x: number,
+        y: number,
+        threshold: number,
+        ignoreNode?: number
+    ) {
         let nodes = project.nodes.filter((node) => {
             return (
                 node.x - threshold <= x &&
-                node.x + threshold >= x &&
-                node.y - threshold <= y &&
-                node.y + threshold >= y
+        node.x + threshold >= x &&
+        node.y - threshold <= y &&
+        node.y + threshold >= y
             )
         })
 
@@ -82,7 +102,7 @@ export const ProjectProxy: ProjectProxyFn = (
     }
 
     function registerNode(node: Node, proxy: INodeProxy) {
-        // const $node = getNode(node)
+    // const $node = getNode(node)
         nodes.set(node.id, node)
         nodeProxies.set(node.id, proxy)
     }
@@ -111,7 +131,7 @@ export const ProjectProxy: ProjectProxyFn = (
         const $from = getNode(from)
         const tunnelIn = TunnelInNode($project, {
             value: name,
-            group: $to.node.group
+            group: $to.node.group,
         })
         const tunnelOut = TunnelOutNode($project, {
             value: name,
@@ -123,7 +143,6 @@ export const ProjectProxy: ProjectProxyFn = (
                 input['from node'] = tunnelOut.node.id
                 tunnelIn.connectFrom(1, $from, input['from index'])
                 input['from index'] = 0
-
             }
         })
 
@@ -133,12 +152,50 @@ export const ProjectProxy: ProjectProxyFn = (
         $project.addNode(tunnelOut)
     }
 
-    function save(file: string, format = false) {
-        const data = JSON.stringify(project, null, 2)
-        fs.writeFileSync(file, data)
+    function getGroups() {
+        const groups = project.nodes.map((node) => node.group)
+        return [...new Set(groups)]
     }
 
+    function format() {
+        const groups = getGroups()
 
+        groups.forEach((group) => {
+            const nodes = $project.project.nodes.filter((x) => x.group === group)
+
+            nodes.forEach((node) => {
+                const $node = NodeProxy($project, node)
+
+                if ($node.getOutConnections().length === 0) {
+                    // Last node
+
+                    $node.putNode(START_X, 0)
+                }
+            })
+
+            nodes.forEach((node) => {
+                const $node = NodeProxy($project, node)
+
+                $node.getInConnections().forEach((connection) => {
+                    if (connection.node.x > node.x) {
+                        // node.x = connection.node.x + GRID_SIZE_X
+                        connection.move(node.x - connection.node.x - GRID_SIZE_X, 0, true)
+                    }
+                })
+            })
+        })
+    }
+
+    function save(file: string, format = false) {
+        const dir = path.dirname(file)
+        if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true })
+        }
+
+        const data = JSON.stringify(project, null, format ? 2 : undefined)
+        fs.writeFileSync(file, data)
+        console.log('Saved project as', file)
+    }
 
     return $project
 }

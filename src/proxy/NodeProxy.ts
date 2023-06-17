@@ -18,22 +18,23 @@ export interface INodeProxy {
   move: (x: number, y: number, connectionIns?: boolean) => void;
   moveAbsolute: (x: number, y: number, connectionIns?: boolean) => void;
   remove: () => void;
-  removeConnection(inputIndex: number): void;
+    removeConnection(inputIndex: number): void;
+    putNode( x: number, y: number): number;
 }
 
-export function NodeProxy(project: IProjectProxy, node: Node | number): INodeProxy {
+export function NodeProxy($project: IProjectProxy, node: Node | number): INodeProxy {
     
     if (typeof node === 'number') {
         const id = node
-        const nodeProxy = project.nodeProxies.get(id)
+        const nodeProxy = $project.nodeProxies.get(id)
 
         if(nodeProxy) return nodeProxy
 
-        node = project.nodes.get(id) as Node
+        node = $project.nodes.get(id) as Node
 
 
         if (node === undefined) {
-            node = project.project.nodes.find((x) => x.id === id)!
+            node = $project.project.nodes.find((x) => x.id === id)!
             if (node === undefined)
                 throw new Error(`Node ${node} not found`)
         }
@@ -58,13 +59,13 @@ export function NodeProxy(project: IProjectProxy, node: Node | number): INodePro
         to: NodeSelector,
         fromIndex?: number
     ) {
-        const $to = project.getNode(to)
+        const $to = $project.getNode(to)
 
         $to.connectFrom(inputIndex, $node.id, fromIndex)
     }
 
     function connectFrom(inputIndex: number, from: NodeSelector, fromIndex = 0) {
-        const $from = project.getNode(from ?? -1)
+        const $from = $project.getNode(from ?? -1)
         const id = $from.id
         console.log($node.inputs)
         $node.inputs[inputIndex]['from node'] = id ?? -1
@@ -101,7 +102,7 @@ export function NodeProxy(project: IProjectProxy, node: Node | number): INodePro
     }
 
     function getOutConnections(): INodeProxy[] {
-        return project.project.nodes.filter(x => x.inputs.some(y => y['from node'] === $node.id)).map(x => NodeProxy(project, x.id))
+        return $project.project.nodes.filter(x => x.inputs.some(y => y['from node'] === $node.id)).map(x => NodeProxy($project, x.id))
     }
 
     function getAllOutConnections(): INodeProxy[] {
@@ -118,7 +119,7 @@ export function NodeProxy(project: IProjectProxy, node: Node | number): INodePro
     function getInConnections(): INodeProxy[] {
         return $node.inputs
             .filter(x => x['from node'] >= 0)
-            .map(x => NodeProxy(project, x['from node']))
+            .map(x => NodeProxy($project, x['from node']))
     }
 
     function getAllInConnections(): INodeProxy[] {
@@ -132,9 +133,37 @@ export function NodeProxy(project: IProjectProxy, node: Node | number): INodePro
         return nodes
     }
 
+    function putNode(x: number, y: number): number {
+        const $node = NodeProxy($project, node)
+        const connections = $node.getInConnections()
+
+        // y += (connections.length * (project.GRID_SIZE_Y * 4))
+
+        while ($project.getNodesAt(x, y, $project.GRID_SIZE_Y / 8).length > 0) {
+            y += $project.GRID_SIZE_Y
+        }
+
+        $node.node.y = y
+        $node.node.x = x
+
+        const ys: number[] = []
+        const xs: number[] = []
+        connections.forEach((connection) => {
+            ys.push(connection.putNode(x - $project.GRID_SIZE_X, $node.node.y))
+            xs.push(connection.node.x - $project.GRID_SIZE_X)
+        })
+
+        // Get highest child node
+        if (ys.length > 0) $node.node.y = Math.min(...ys)
+
+        // if (xs.length > 0) node.x = Math.max(...xs)
+
+        return $node.node.y // Highest node
+    }
+
     function remove() {
-        project.unregisterNode($node)
-        project.removeNode($node)
+        $project.unregisterNode($node)
+        $project.removeNode($node)
     }
 
     const proxy = {
@@ -152,10 +181,11 @@ export function NodeProxy(project: IProjectProxy, node: Node | number): INodePro
         moveAbsolute,
         remove,
         removeConnection,
+        putNode,
         proxy: true,
     }
 
-    project.registerNode($node, proxy)
+    $project.registerNode($node, proxy)
 
     return proxy
 }

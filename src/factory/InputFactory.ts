@@ -1,4 +1,5 @@
-import { Input } from '../types/Project'
+// import { Input } from '../types/Project'
+import { PxcProject } from './../types/Project'
 
 export function RawValueFactory(value: any) {
     const time = 0
@@ -8,10 +9,10 @@ export function RawValueFactory(value: any) {
 }
 
 export function InputFactory(options: {
-    from?: number,
-    value: any
-}): Input {
-    const input: Input = {
+  from?: number;
+  value: any;
+}): PxcProject.Input {
+    const input: PxcProject.Input = {
         global_key: '',
         'from node': options.from ?? -1,
         animators: [],

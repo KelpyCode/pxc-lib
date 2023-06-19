@@ -1,7 +1,7 @@
 import { NodeLocaleName } from '../PxcDataHandler'
 import { INodeProxy, NodeProxy } from '../proxy/NodeProxy'
 import { IProjectProxy } from '../proxy/ProjectProxy'
-import { Input, Node } from '../types/Project'
+import { PxcProject } from './../types/Project'
 import * as pxc from '../PxcDataHandler'
 
 let id = 1000
@@ -16,7 +16,7 @@ export function NodeFactory<T extends NodeLocaleName>(project: IProjectProxy, ty
     // const centerY = 0
     // const centerX = 0
 
-    const node: Node = {
+    const node: PxcProject.Node = {
         group: group ?? -4,
         inputs: [],
         attri: {},

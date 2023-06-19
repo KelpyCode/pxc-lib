@@ -1,5 +1,5 @@
 import  * as pxc from '../PxcDataHandler'
-import { Node } from '../types/Project'
+import { PxcProject } from './../types/Project'
 import { IProjectProxy, NodeSelector } from './ProjectProxy'
 
 const INPUT_VAR_INDEX = 1
@@ -7,7 +7,7 @@ const INPUT_VAR_INDEX = 1
 export interface INodeProxy<T extends pxc.NodeLocaleName = any> {
   proxy: boolean;
   id: number;
-  node: Node;
+  node: PxcProject.Node;
   setInputValue: (name: pxc.NodeInput<T>, value: any, frame?: number) => void;
   getInputValue: <V extends pxc.NodeInput<T>>(
     name: V,
@@ -31,7 +31,7 @@ export interface INodeProxy<T extends pxc.NodeLocaleName = any> {
   putNode(x: number, y: number): number;
 }
 
-export function NodeProxy<T extends pxc.NodeLocaleName>($project: IProjectProxy, node: Node | number): INodeProxy<T> {
+export function NodeProxy<T extends pxc.NodeLocaleName>($project: IProjectProxy, node: PxcProject.Node | number): INodeProxy<T> {
     
     if (typeof node === 'number') {
         const id = node
@@ -39,16 +39,16 @@ export function NodeProxy<T extends pxc.NodeLocaleName>($project: IProjectProxy,
 
         if(nodeProxy) return nodeProxy
 
-        node = $project.nodes.get(id) as Node
+        node = $project.nodes.get(id) as PxcProject.Node
 
 
         if (node === undefined) {
             node = $project.project.nodes.find((x) => x.id === id)!
             if (node === undefined)
-                throw new Error(`Node ${node} not found`)
+                throw new Error(`PxcProject.Node ${node} not found`)
         }
     }
-    const $node = node as Node
+    const $node = node as PxcProject.Node
 
 
     // function setInputValue(inputIndex: number, value: any) {

@@ -3,17 +3,17 @@ import path from 'path'
 import { ProjectFactory } from '../factory/ProjectFactory'
 // import { TunnelInNode } from '../node/TunnelInNode'
 // import { TunnelOutNode } from '../node/TunnelOutNode'
-import { Node, Project } from '../types/Project'
+import { PxcProject } from './../types/Project'
 import { INodeProxy, NodeProxy } from './NodeProxy'
 export interface IProjectProxy {
   addNode: (node: NodeSelector) => void;
   removeNode: (node: NodeSelector) => void;
-  project: Project;
-  nodes: Map<number, Node>;
+  project: PxcProject.Project;
+  nodes: Map<number, PxcProject.Node>;
   nodeProxies: Map<number, INodeProxy>;
   getNode: (node: NodeSelector) => INodeProxy;
-  getNodesAt: (x: number, y: number, threshold: number) => Node[];
-  registerNode: (node: Node, proxy: INodeProxy) => void;
+  getNodesAt: (x: number, y: number, threshold: number) => PxcProject.Node[];
+  registerNode: (node: PxcProject.Node, proxy: INodeProxy) => void;
   unregisterNode: (node: NodeSelector) => void;
   tunnelifyConnection: (from: number, to: number, name: string) => void;
   format: () => void;
@@ -23,18 +23,18 @@ export interface IProjectProxy {
   GRID_SIZE_X: number;
 }
 
-export type NodeSelector = number | INodeProxy | Node;
+export type NodeSelector = number | INodeProxy | PxcProject.Node;
 
 type ProjectProxyFn = {
-  (project: Project): IProjectProxy;
+  (project: PxcProject.Project): IProjectProxy;
   loadProject: (file: string) => IProjectProxy;
   makeProject: () => IProjectProxy;
 };
 
 export const ProjectProxy: ProjectProxyFn = (
-    project: Project
+    project: PxcProject.Project
 ): IProjectProxy => {
-    const nodes = new Map<number, Node>()
+    const nodes = new Map<number, PxcProject.Node>()
     const nodeProxies = new Map<number, INodeProxy>()
 
     const FORMAT_INIT_POSITION = [-10000, -10000]
@@ -96,11 +96,11 @@ export const ProjectProxy: ProjectProxyFn = (
         } else if ((node as INodeProxy).proxy) {
             return node as INodeProxy
         } else {
-            return NodeProxy($project, (node as Node).id)
+            return NodeProxy($project, (node as PxcProject.Node).id)
         }
     }
 
-    function registerNode(node: Node, proxy: INodeProxy) {
+    function registerNode(node: PxcProject.Node, proxy: INodeProxy) {
     // const $node = getNode(node)
         nodes.set(node.id, node)
         nodeProxies.set(node.id, proxy)
@@ -205,7 +205,7 @@ ProjectProxy.makeProject = () => {
 }
 ProjectProxy.loadProject = (file: string) => {
     const data = fs.readFileSync(file, 'utf-8')
-    const project = JSON.parse(data) as Project
+    const project = JSON.parse(data) as PxcProject.Project
 
     return ProjectProxy(project)
 }

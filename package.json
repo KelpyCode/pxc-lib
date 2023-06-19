@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc",
-    "generate-pxc-types": "ts-node ./scripts/generatePxcTypes.ts"
+    "generate-pxc-types": "ts-node ./scripts/generatePxcTypes.ts",
+    "docs": "typedoc"
   },
   "keywords": [],
   "author": "Kelpy",

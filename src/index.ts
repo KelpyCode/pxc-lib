@@ -1,3 +1,11 @@
 
 export * from './proxy/ProjectProxy'
 export * from './proxy/NodeProxy'
+export * from './websocket/WsClient'
+export * from './types/NodeGenerator'
+export * from './types/Project'
+export * from './factory/InputFactory'
+export * from './factory/NodeFactory'
+export * from './factory/ProjectFactory'
+export * from './util'
+export * from './PxcDataHandler'

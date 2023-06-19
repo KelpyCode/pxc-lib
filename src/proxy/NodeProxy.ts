@@ -4,7 +4,7 @@ import { IProjectProxy, NodeSelector } from './ProjectProxy'
 
 const INPUT_VAR_INDEX = 1
 
-export interface INodeProxy<T extends pxc.NodeLocaleName> {
+export interface INodeProxy<T extends pxc.NodeLocaleName = any> {
   proxy: boolean;
   id: number;
   node: Node;
@@ -65,10 +65,10 @@ export function NodeProxy<T extends pxc.NodeLocaleName>($project: IProjectProxy,
         ] = value
     }
 
-    function getInputValue(name: pxc.NodeInput<T>, frame = 0) {
+    function getInputValue<V extends pxc.NodeInput<T>>(name: V, frame = 0): pxc.InputValueType<T, V> {
         return $node.inputs[pxc.getInputKey(getLocaleName() as any, name)]['raw value'][frame][
             INPUT_VAR_INDEX
-        ]
+        ] as any
     }
 
     function removeConnection(inputIndex: number) {
@@ -191,7 +191,7 @@ export function NodeProxy<T extends pxc.NodeLocaleName>($project: IProjectProxy,
         $project.removeNode($node)
     }
 
-    const proxy = {
+    const proxy: INodeProxy<T> = {
         id: $node.id,
         node,
         setInputValue,

@@ -1,11 +1,10 @@
-import { Node, Project } from '../types/Project'
-import { INodeProxy, NodeProxy } from './NodeProxy'
-import { loadProject } from './../util'
 import fs from 'fs'
 import path from 'path'
 import { ProjectFactory } from '../factory/ProjectFactory'
-import { TunnelInNode } from '../node/TunnelInNode'
-import { TunnelOutNode } from '../node/TunnelOutNode'
+// import { TunnelInNode } from '../node/TunnelInNode'
+// import { TunnelOutNode } from '../node/TunnelOutNode'
+import { Node, Project } from '../types/Project'
+import { INodeProxy, NodeProxy } from './NodeProxy'
 export interface IProjectProxy {
   addNode: (node: NodeSelector) => void;
   removeNode: (node: NodeSelector) => void;
@@ -129,27 +128,28 @@ export const ProjectProxy: ProjectProxyFn = (
     function tunnelifyConnection(from: number, to: number, name: string) {
         const $to = getNode(to)
         const $from = getNode(from)
-        const tunnelIn = TunnelInNode($project, {
-            value: name,
-            group: $to.node.group,
-        })
-        const tunnelOut = TunnelOutNode($project, {
-            value: name,
-            group: $to.node.group,
-        })
+        // Todo: readd tunnel
+        // const tunnelIn = TunnelInNode($project, {
+        //     value: name,
+        //     group: $to.node.group,
+        // })
+        // const tunnelOut = TunnelOutNode($project, {
+        //     value: name,
+        //     group: $to.node.group,
+        // })
 
-        $to.node.inputs.forEach((input) => {
-            if (input['from node'] === from) {
-                input['from node'] = tunnelOut.node.id
-                tunnelIn.connectFrom(1, $from, input['from index'])
-                input['from index'] = 0
-            }
-        })
+        // $to.node.inputs.forEach((input) => {
+        //     if (input['from node'] === from) {
+        //         input['from node'] = tunnelOut.node.id
+        //         tunnelIn.connectFrom(1, $from, input['from index'])
+        //         input['from index'] = 0
+        //     }
+        // })
 
-        // tunnelIn.connectFrom(1, $from, fromIndex)
+        // // tunnelIn.connectFrom(1, $from, fromIndex)
 
-        $project.addNode(tunnelIn)
-        $project.addNode(tunnelOut)
+        // $project.addNode(tunnelIn)
+        // $project.addNode(tunnelOut)
     }
 
     function getGroups() {

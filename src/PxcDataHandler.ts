@@ -103,9 +103,15 @@ getNodeData('Gradient', 'Gradient', '')
 
 
 export function getLocaleName<T extends NodeInternalName>(
-    name: T,
+    name: T
 ): NodeLocaleName {
     return data.names[name] as any
+}
+
+export function getInternalName<T extends NodeLocaleName>(
+    name: T
+): NodeInternalName {
+    return data.nodes[name].name as any
 }
 
 

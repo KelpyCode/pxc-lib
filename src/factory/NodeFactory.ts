@@ -1,15 +1,15 @@
+import { NodeLocaleName } from '../PxcDataHandler'
 import { INodeProxy, NodeProxy } from '../proxy/NodeProxy'
 import { IProjectProxy } from '../proxy/ProjectProxy'
 import { Input, Node } from '../types/Project'
 
 let id = 1000
 
+const int = NodeFactory(p, '2D Light', {}).getInputValue('Light shape')
 
-export function NodeFactory(project: IProjectProxy, options: {
+export function NodeFactory<T extends NodeLocaleName>(project: IProjectProxy, type: T, options: {
     group: number,
-    inputs: Input[],
-    type: string
-}): INodeProxy {
+}): INodeProxy<T> {
     const ownId = id++
 
     // const circleSteps = 100
@@ -36,7 +36,7 @@ export function NodeFactory(project: IProjectProxy, options: {
         array_process: 0,
     }
 
-    const proxy = NodeProxy(project, node)
+    const proxy = NodeProxy<T>(project, node)
 
     return proxy
 }

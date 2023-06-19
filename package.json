@@ -1,10 +1,11 @@
 {
-  "name": "pxcgen",
+  "name": "pxc-lib",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "generate-pxc-types": "ts-node ./scripts/generatePxcTypes.ts"
   },
   "keywords": [],
   "author": "Kelpy",
@@ -15,6 +16,7 @@
     "@typescript-eslint/parser": "^5.59.0",
     "eslint": "^8.38.0",
     "ts-node": "^10.9.1",
+    "typedoc": "^0.24.8",
     "typescript": "^5.0.4"
   },
   "dependencies": {

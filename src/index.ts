@@ -1,36 +1,59 @@
 import { Nodes } from './node/Nodes'
 import { ProjectProxy } from './proxy/ProjectProxy'
+import { WsClient } from './websocket/WsClient'
+import { WsServer } from './websocket/WsServer'
 
+interface Data {
+  x: number;
+  y: number;
+}
 
-const $project = ProjectProxy.loadProject('./example/GradientMaker2.pxc')
+const client = WsClient<Data>({
+    port: 4423,
+    framerate: 60,
+})
 
-const startTime = new Date().getTime()
+const res = 64
 
-// const $ = Nodes($project)
+client.onFrame((frame) => {
+    client.send({
+        x: Math.sin(frame) * 0.5 * (64 / 2) + 64 / 2,
+        y: frame % 64,
+    })
+}, 1)
 
+// WsServer()
 
-$project.format()
+// client.onopen = (() => {
+//     console.log('open')
+//     client.send(Buffer.from(JSON.stringify({test: 'Hello world'})))
+// })
 
-$project.save('dist/project2.pxc')
+// const $project = ProjectProxy.loadProject('./example/GradientMaker2.pxc')
 
+// const startTime = new Date().getTime()
 
-// function generateRandomString(): string {
-//     return Math.random().toString(36).substring(7)
-// }
+// // const $ = Nodes($project)
 
-// $project.project.nodes.forEach(node => {
-//     const $node = NodeProxy($project, node)
+// $project.format()
 
-//     $node.getInConnections().forEach((connection) => {
-//         $project.tunnelifyConnection(connection.node.id, node.id, generateRandomString())
-//     })
-// });
+// $project.save('dist/project2.pxc')
 
+// // function generateRandomString(): string {
+// //     return Math.random().toString(36).substring(7)
+// // }
 
+// // $project.project.nodes.forEach(node => {
+// //     const $node = NodeProxy($project, node)
 
-const endTime = new Date().getTime()
-console.log('Done, took ' + (endTime - startTime) + 'ms')
+// //     $node.getInConnections().forEach((connection) => {
+// //         $project.tunnelifyConnection(connection.node.id, node.id, generateRandomString())
+// //     })
+// // });
 
-// setInterval(() => {
-//     // Dont die
-// }, 10000)
+// const endTime = new Date().getTime()
+// console.log('Done, took ' + (endTime - startTime) + 'ms')
+
+setInterval(() => {
+    // Dont die
+}, 10000)

@@ -1,28 +1,37 @@
+import  * as pxc from '../PxcDataHandler'
 import { Node } from '../types/Project'
 import { IProjectProxy, NodeSelector } from './ProjectProxy'
 
 const INPUT_VAR_INDEX = 1
 
-export interface INodeProxy {
+export interface INodeProxy<T extends pxc.NodeLocaleName> {
   proxy: boolean;
   id: number;
   node: Node;
-  setInputValue: (inputIndex: number, value: any) => void;
-  connectFrom: (inputIndex: number, from: NodeSelector, fromIndex?: number) => void;
+  setInputValue: (name: pxc.NodeInput<T>, value: any, frame?: number) => void;
+  getInputValue: <V extends pxc.NodeInput<T>>(
+    name: V,
+    frame?: number
+  ) => pxc.InputValueType<T, V>;
+  connectFrom: (
+    inputIndex: number,
+    from: NodeSelector,
+    fromIndex?: number
+  ) => void;
   connectTo: (inputIndex: number, to: NodeSelector, fromIndex?: number) => void;
   setName: (name: string) => void;
-  getInConnections: () => INodeProxy[];
-  getAllInConnections: () => INodeProxy[];
-  getOutConnections: () => INodeProxy[];
-  getAllOutConnections: () => INodeProxy[];
+  getInConnections: () => INodeProxy<any>[];
+  getAllInConnections: () => INodeProxy<any>[];
+  getOutConnections: () => INodeProxy<any>[];
+  getAllOutConnections: () => INodeProxy<any>[];
   move: (x: number, y: number, connectionIns?: boolean) => void;
   moveAbsolute: (x: number, y: number, connectionIns?: boolean) => void;
   remove: () => void;
-    removeConnection(inputIndex: number): void;
-    putNode( x: number, y: number): number;
+  removeConnection(inputIndex: number): void;
+  putNode(x: number, y: number): number;
 }
 
-export function NodeProxy($project: IProjectProxy, node: Node | number): INodeProxy {
+export function NodeProxy<T extends pxc.NodeLocaleName>($project: IProjectProxy, node: Node | number): INodeProxy<T> {
     
     if (typeof node === 'number') {
         const id = node
@@ -42,8 +51,24 @@ export function NodeProxy($project: IProjectProxy, node: Node | number): INodePr
     const $node = node as Node
 
 
-    function setInputValue(inputIndex: number, value: any) {
-        $node.inputs[inputIndex]['raw value'][0][INPUT_VAR_INDEX] = value
+    // function setInputValue(inputIndex: number, value: any) {
+    //   $node.inputs[inputIndex]["raw value"][0][INPUT_VAR_INDEX] = value;
+    // }
+
+    function getLocaleName() {
+        return pxc.getLocaleName($node.type as pxc.NodeInternalName)
+    }
+
+    function setInputValue(name: pxc.NodeInput<T>, value: any, frame = 0) {
+        $node.inputs[pxc.getInputKey(getLocaleName() as any, name)]['raw value'][frame][
+            INPUT_VAR_INDEX
+        ] = value
+    }
+
+    function getInputValue(name: pxc.NodeInput<T>, frame = 0) {
+        return $node.inputs[pxc.getInputKey(getLocaleName() as any, name)]['raw value'][frame][
+            INPUT_VAR_INDEX
+        ]
     }
 
     function removeConnection(inputIndex: number) {
@@ -101,12 +126,12 @@ export function NodeProxy($project: IProjectProxy, node: Node | number): INodePr
         }
     }
 
-    function getOutConnections(): INodeProxy[] {
+    function getOutConnections(): INodeProxy<any>[] {
         return $project.project.nodes.filter(x => x.inputs.some(y => y['from node'] === $node.id)).map(x => NodeProxy($project, x.id))
     }
 
-    function getAllOutConnections(): INodeProxy[] {
-        const nodes: INodeProxy[] = []
+    function getAllOutConnections(): INodeProxy<any>[] {
+        const nodes: INodeProxy<any>[] = []
 
         getOutConnections().forEach(x => {
             nodes.push(x)
@@ -116,14 +141,14 @@ export function NodeProxy($project: IProjectProxy, node: Node | number): INodePr
         return nodes
     }
 
-    function getInConnections(): INodeProxy[] {
+    function getInConnections(): INodeProxy<any>[] {
         return $node.inputs
             .filter(x => x['from node'] >= 0)
             .map(x => NodeProxy($project, x['from node']))
     }
 
-    function getAllInConnections(): INodeProxy[] {
-        const nodes: INodeProxy[] = []
+    function getAllInConnections(): INodeProxy<any>[] {
+        const nodes: INodeProxy<any>[] = []
 
         getInConnections().forEach(x => {
             nodes.push(x)
@@ -170,6 +195,7 @@ export function NodeProxy($project: IProjectProxy, node: Node | number): INodePr
         id: $node.id,
         node,
         setInputValue,
+        getInputValue,
         connectFrom,
         connectTo,
         setName,

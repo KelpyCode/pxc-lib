@@ -1,24 +1,42 @@
 import { ProjectProxy } from './proxy/ProjectProxy'
 import { WsClient } from './websocket/WsClient'
+import * as ws from 'ws'
+import http from 'http'
+import { WsServer } from './websocket/WsServer'
 
-interface Data {
-  x: number;
-  y: number;
-}
+// interface Data {
+//   x: number;
+//   y: number;
+// }
 
-const client = WsClient<Data>({
-    port: 4423,
-    framerate: 60,
+// const client = WsClient<Data>({
+//     port: 4423,
+//     framerate: 60,
+// })
+
+// const res = 64
+
+// client.onFrame((frame) => {
+//     client.send({
+//         x: Math.sin(frame) * 0.5 * (64 / 2) + 64 / 2,
+//         y: frame % 64,
+//     })
+// }, 1)
+
+
+// The server then listens on the port specified
+
+
+const server = WsServer({
+    port: 1234
 })
 
-const res = 64
+server.onSurface(surface => {
+    console.log('Got surface', surface)
+})
 
-client.onFrame((frame) => {
-    client.send({
-        x: Math.sin(frame) * 0.5 * (64 / 2) + 64 / 2,
-        y: frame % 64,
-    })
-}, 1)
+
+
 
 // WsServer()
 

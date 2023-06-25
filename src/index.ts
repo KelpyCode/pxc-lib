@@ -2,6 +2,7 @@
 export * from './proxy/ProjectProxy'
 export * from './proxy/NodeProxy'
 export * from './websocket/WsClient'
+export * from './websocket/WsServer'
 export * from './types/NodeGenerator'
 export * from './types/Project'
 export * from './factory/InputFactory'

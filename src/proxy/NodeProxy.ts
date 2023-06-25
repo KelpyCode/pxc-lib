@@ -8,8 +8,16 @@ export interface INodeProxy<T extends pxc.NodeLocaleName = any> {
   proxy: boolean;
   id: number;
   node: PxcProject.Node;
-  setInputValue: (name: pxc.NodeInput<T>, value: any, frame?: number) => void;
-  getInputValue: <V extends pxc.NodeInput<T>>(
+
+  /** @quickinfo */
+  setInputValue: (
+    /** @quickinfo */  name:  pxc.NodeInput<T>,
+    value: any,
+    frame?: number
+  ) => void;
+
+  /** @quickinfo */
+  getInputValue: <V extends /** @quickinfo */ pxc.NodeInput<T>>(
     name: V,
     frame?: number
   ) => pxc.InputValueType<T, V>;
@@ -32,15 +40,13 @@ export interface INodeProxy<T extends pxc.NodeLocaleName = any> {
 }
 
 export function NodeProxy<T extends pxc.NodeLocaleName>($project: IProjectProxy, node: PxcProject.Node | number): INodeProxy<T> {
-    
     if (typeof node === 'number') {
         const id = node
         const nodeProxy = $project.nodeProxies.get(id)
 
-        if(nodeProxy) return nodeProxy
+        if (nodeProxy) return nodeProxy
 
         node = $project.nodes.get(id) as PxcProject.Node
-
 
         if (node === undefined) {
             node = $project.project.nodes.find((x) => x.id === id)!
@@ -50,7 +56,6 @@ export function NodeProxy<T extends pxc.NodeLocaleName>($project: IProjectProxy,
     }
     const $node = node as PxcProject.Node
 
-
     // function setInputValue(inputIndex: number, value: any) {
     //   $node.inputs[inputIndex]["raw value"][0][INPUT_VAR_INDEX] = value;
     // }
@@ -59,16 +64,26 @@ export function NodeProxy<T extends pxc.NodeLocaleName>($project: IProjectProxy,
         return pxc.getLocaleName($node.type as pxc.NodeInternalName)
     }
 
-    function setInputValue(name: pxc.NodeInput<T>, value: any, frame = 0) {
-        $node.inputs[pxc.getInputKey(getLocaleName() as any, name)]['raw value'][frame][
-            INPUT_VAR_INDEX
-        ] = value
+    /**
+   * @quickinfo
+   */
+    function setInputValue<V extends pxc.NodeInput<T>>(
+        name: V,
+        value: pxc.NodeInputValue<T, V>,
+        frame = 0
+    ) {
+        $node.inputs[pxc.getInputKey(getLocaleName() as any, name)]['raw value'][
+            frame
+        ][INPUT_VAR_INDEX] = value as any
     }
 
-    function getInputValue<V extends pxc.NodeInput<T>>(name: V, frame = 0): pxc.InputValueType<T, V> {
-        return $node.inputs[pxc.getInputKey(getLocaleName() as any, name)]['raw value'][frame][
-            INPUT_VAR_INDEX
-        ] as any
+    function getInputValue<V extends pxc.NodeInput<T>>(
+        name: V,
+        frame = 0
+    ): pxc.InputValueType<T, V> {
+        return $node.inputs[pxc.getInputKey(getLocaleName() as any, name)][
+            'raw value'
+        ][frame][INPUT_VAR_INDEX] as any
     }
 
     function removeConnection(inputIndex: number) {
@@ -77,13 +92,9 @@ export function NodeProxy<T extends pxc.NodeLocaleName>($project: IProjectProxy,
     }
 
     /**
-     * Connect to input of another node
-     */
-    function connectTo(
-        inputIndex: number,
-        to: NodeSelector,
-        fromIndex?: number
-    ) {
+   * Connect to input of another node
+   */
+    function connectTo(inputIndex: number, to: NodeSelector, fromIndex?: number) {
         const $to = $project.getNode(to)
 
         $to.connectFrom(inputIndex, $node.id, fromIndex)
@@ -104,9 +115,9 @@ export function NodeProxy<T extends pxc.NodeLocaleName>($project: IProjectProxy,
     function move(x: number, y: number, connectionIns = false) {
         $node.x += x
         $node.y += y
-        
+
         if (connectionIns) {
-            getAllInConnections().forEach(node => {
+            getAllInConnections().forEach((node) => {
                 node.move(x, y)
             })
         }
@@ -118,7 +129,7 @@ export function NodeProxy<T extends pxc.NodeLocaleName>($project: IProjectProxy,
         $node.y = y
 
         const diff = [x - previous[0], y - previous[1]]
-        
+
         if (connectionIns) {
             getAllInConnections().forEach((node) => {
                 node.move(diff[0], diff[1])
@@ -127,13 +138,15 @@ export function NodeProxy<T extends pxc.NodeLocaleName>($project: IProjectProxy,
     }
 
     function getOutConnections(): INodeProxy<any>[] {
-        return $project.project.nodes.filter(x => x.inputs.some(y => y['from node'] === $node.id)).map(x => NodeProxy($project, x.id))
+        return $project.project.nodes
+            .filter((x) => x.inputs.some((y) => y['from node'] === $node.id))
+            .map((x) => NodeProxy($project, x.id))
     }
 
     function getAllOutConnections(): INodeProxy<any>[] {
         const nodes: INodeProxy<any>[] = []
 
-        getOutConnections().forEach(x => {
+        getOutConnections().forEach((x) => {
             nodes.push(x)
             nodes.push(...x.getAllOutConnections())
         })
@@ -143,14 +156,14 @@ export function NodeProxy<T extends pxc.NodeLocaleName>($project: IProjectProxy,
 
     function getInConnections(): INodeProxy<any>[] {
         return $node.inputs
-            .filter(x => x['from node'] >= 0)
-            .map(x => NodeProxy($project, x['from node']))
+            .filter((x) => x['from node'] >= 0)
+            .map((x) => NodeProxy($project, x['from node']))
     }
 
     function getAllInConnections(): INodeProxy<any>[] {
         const nodes: INodeProxy<any>[] = []
 
-        getInConnections().forEach(x => {
+        getInConnections().forEach((x) => {
             nodes.push(x)
             nodes.push(...x.getAllInConnections())
         })
